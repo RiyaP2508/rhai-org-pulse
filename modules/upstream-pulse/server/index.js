@@ -222,6 +222,7 @@ function startPeriodicRosterPush(storage) {
 
 module.exports = function registerRoutes(router, context) {
   const { requireScope } = context;
+  const DEMO_MODE = process.env.DEMO_MODE === 'true';
 
   function handleProxyError(res, err) {
     const status = err.upstreamStatus || 502;
@@ -232,8 +233,51 @@ module.exports = function registerRoutes(router, context) {
     });
   }
 
+  // Demo mode stub data
+  function getDemoData(endpoint) {
+    if (endpoint === 'dashboard') {
+      return {
+        contributions: {
+          all: { team: 1250, total: 5000, teamPercent: 25 },
+          commits: { team: 500, total: 2000, teamPercent: 25 },
+          pullRequests: { team: 300, total: 1200, teamPercent: 25 },
+          reviews: { team: 250, total: 1000, teamPercent: 25 },
+          issues: { team: 200, total: 800, teamPercent: 25 }
+        },
+        summary: {
+          activeContributors: 42,
+          trackedProjects: 6,
+          periodStart: '2024-01-01',
+          periodEnd: '2024-01-31'
+        },
+        topContributors: [],
+        orgActivity: [],
+        dailyBreakdown: [],
+        topProjects: [],
+        trends: {},
+        leadership: { byOrg: [] }
+      };
+    } else if (endpoint === 'contributors') {
+      return { contributors: [] };
+    } else if (endpoint === 'leadership') {
+      return { members: [], summary: {}, byOrg: [] };
+    } else if (endpoint === 'projects') {
+      return { projects: [] };
+    } else if (endpoint === 'orgs') {
+      return { orgs: [], summary: {} };
+    }
+    return {};
+  }
+
   router.get('/config', requireScope('upstream-pulse:read'), async function(req, res) {
     try {
+      if (DEMO_MODE) {
+        return res.json({
+          baseUrl: 'http://demo-upstream-pulse',
+          configured: true,
+          connection: { reachable: true, status: 200 }
+        });
+      }
       const connection = await checkConnection();
       res.json({
         baseUrl: getBaseUrl(),
@@ -247,6 +291,9 @@ module.exports = function registerRoutes(router, context) {
 
   router.get('/dashboard', requireScope('upstream-pulse:read'), async function(req, res) {
     try {
+      if (DEMO_MODE) {
+        return res.json(getDemoData('dashboard'));
+      }
       const data = await proxyRequest('/api/metrics/dashboard', {
         days: req.query.days,
         githubOrg: req.query.githubOrg,
@@ -260,6 +307,9 @@ module.exports = function registerRoutes(router, context) {
 
   router.get('/contributors', requireScope('upstream-pulse:read'), async function(req, res) {
     try {
+      if (DEMO_MODE) {
+        return res.json(getDemoData('contributors'));
+      }
       const data = await proxyRequest('/api/metrics/contributors', {
         days: req.query.days,
         limit: req.query.limit,
@@ -274,6 +324,9 @@ module.exports = function registerRoutes(router, context) {
 
   router.get('/leadership', requireScope('upstream-pulse:read'), async function(req, res) {
     try {
+      if (DEMO_MODE) {
+        return res.json(getDemoData('leadership'));
+      }
       const data = await proxyRequest('/api/metrics/leadership', {
         githubOrg: req.query.githubOrg,
         projectId: req.query.projectId,
@@ -286,6 +339,9 @@ module.exports = function registerRoutes(router, context) {
 
   router.get('/projects', requireScope('upstream-pulse:read'), async function(req, res) {
     try {
+      if (DEMO_MODE) {
+        return res.json(getDemoData('projects'));
+      }
       const data = await proxyRequest('/api/projects', {
         githubOrg: req.query.githubOrg
       });
@@ -297,6 +353,9 @@ module.exports = function registerRoutes(router, context) {
 
   router.get('/orgs', requireScope('upstream-pulse:read'), async function(req, res) {
     try {
+      if (DEMO_MODE) {
+        return res.json(getDemoData('orgs'));
+      }
       const data = await proxyRequest('/api/orgs', {
         days: req.query.days
       });

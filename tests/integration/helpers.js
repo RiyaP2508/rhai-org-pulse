@@ -1,6 +1,8 @@
+const { expect } = require('@playwright/test');
+
 /**
  * Sets up error tracking for a Playwright page
- * 
+ *
  * Captures both page errors and console errors
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
@@ -134,11 +136,28 @@ async function countDisabledNavItems(page, sectionName) {
   return disabledCount;
 }
 
+/**
+ * Helper function to verify text appears on the page and is visible
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} text - Text to search for
+ * @param {string} description - Description for logging (e.g., "contributor: Alice Johnson")
+ * @param {import('@playwright/test').Locator} [scope] - Optional scope/parent element to search within
+ * @returns {Promise<import('@playwright/test').Locator>} - The located element
+ */
+async function verifyTextDisplays(page, text, description, scope = null) {
+  const locator = scope ? scope.locator(`text=${text}`) : page.locator(`text=${text}`);
+  await expect(locator.first()).toBeVisible();
+  console.log(`✓ Found ${description}: ${text}`);
+  return locator;
+}
+
 module.exports = {
   setupErrorTracking,
   logCapturedErrors,
   pageHasContent,
   pageLoadComplete,
   mainContentIsVisible,
-  countDisabledNavItems
+  countDisabledNavItems,
+  verifyTextDisplays
 };
