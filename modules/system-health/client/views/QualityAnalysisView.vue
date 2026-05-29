@@ -39,6 +39,13 @@ const selected = computed(() =>
   selectedId.value ? QUALITY_REPORTS.find(r => r.id === selectedId.value) : null
 )
 
+function scoreClass(score) {
+  const n = parseFloat(score)
+  if (n >= 7) return 'text-green-600 dark:text-green-400'
+  if (n >= 4) return 'text-amber-600 dark:text-amber-400'
+  return 'text-red-600 dark:text-red-400'
+}
+
 function openReport(id) {
   selectedId.value = id
 }
@@ -152,11 +159,7 @@ watch(
               <td class="px-4 py-3 whitespace-nowrap">
                 <span
                   class="font-medium"
-                  :class="{
-                    'text-green-600 dark:text-green-400': parseFloat(row.score) >= 7,
-                    'text-amber-600 dark:text-amber-400': parseFloat(row.score) >= 4 && parseFloat(row.score) < 7,
-                    'text-red-600 dark:text-red-400': parseFloat(row.score) < 4,
-                  }"
+                  :class="scoreClass(row.score)"
                 >
                   {{ row.score }}
                 </span>
